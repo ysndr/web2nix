@@ -14,8 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{ pkgs ? import <nixpkgs> {}, url, name ? url, ... }:
-  pkgs.writeScriptBin name ''
-    #!${pkgs.runtimeShell}
-    exec ${pkgs.chromium}/bin/chromium --app=${pkgs.lib.escapeShellArg url}
-  ''
+{ 
+  pkgs ? import <nixpkgs> {}, 
+  url, 
+  name ? url ,
+  desktop ? true,
+  desktop-name ? name
+}:
+with pkgs; let
+
+  launcher = writeShellScriptBin "${name}" ''
+    exec ${chromium}/bin/chromium --app=${lib.escapeShellArg url}
+  '';
+
+  desktopFile = writeTextFile {
+    name = "${name}-desktop";
+    destination = "/share/applications/${name}.desktop";
+    text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=${desktop-name}
+    Exec=${launcher}/bin/${name}
+    Terminal=false
+    '';
+  };
+
+in 
+symlinkJoin {
+   name = "${name}-bundle";
+   paths = [launcher] ++ lib.optional desktop desktopFile;
+}
