@@ -15,23 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 { pkgs ? import <nixpkgs> {}, url, name ? url, ... }:
-  pkgs.stdenv.mkDerivation {
-    name = name;
-    buildInputs = [ pkgs.chromium ];
-    phases = [
-      "patchPhase"
-      "configurePhase"
-      "buildPhase"
-      "checkPhase"
-      "installPhase"
-      "fixupPhase"
-      "installCheckPhase"
-      "distPhase"
-    ];
-    installPhase = ''
-      mkdir -p "$out/bin"
-      echo '#!${pkgs.stdenv.shell}' >> "$out/bin/"'${name}'
-      echo "exec chromium --app='${url}'" >> "$out/bin/"'${name}'
-      chmod +x "$out/bin/"'${name}'
-    '';
-  }
+  pkgs.writeScriptBin name ''
+    #!${pkgs.runtimeShell}
+    exec ${pkgs.chromium}/bin/chromium --app=${pkgs.lib.escapeShellArg url}
+  ''
